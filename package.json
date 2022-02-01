@@ -24,6 +24,10 @@
   "homepage": "https://github.com/Geetork/git-test#readme",
   "dependencies": {
     "body-parser": "^1.19.1",
-    "express": "^4.17.2"
+    "cookie-parser": "^1.4.6",
+    "express": "^4.17.2",
+    "mocha": "^9.2.0",
+    "mongoose": "^4.13.21",
+    "mongoose-currency": "^0.2.0"
   }
 }
