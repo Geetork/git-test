@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose');
-const cookieParser = require('cookieParser');
+const cookieParser = require('cookie-parser');
 
 const dish = require('./routes/dishRouter');
 const promo = require('./routes/promoRouter');
@@ -26,26 +26,37 @@ const port = 3000;
 app.use(cookieParser('12345-67890-09876-54321'));
 
 function auth(req, res, next) {
-  console.log(req.headers);
-  let authHeader = req.headers.authotization;
-  if (!authHeader) {
-    let err = new Error('You are not authenticated!');
-    res.setHeader('WWW-Aothenticate', 'Basic');
-    err.status = 401;
-    next(err);
-    return;
-  };
-
-  let auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-  let user = auth[0];
-  let pass = auth[1];
-  if (user == 'admin' && pass == 'password'){
-    next();
-  } else {
-    let err = new Error('You are not authenticated!');
-    res.setHeader('WWW-Authenticate', 'Basic');
-    err.status = 401;
-    next(err);
+  if (!req.signedCookies.user) {
+    var authHeader = req.headers.authorization;
+    if (!authHeader) {
+        var err = new Error('You are not authenticated!');
+        res.setHeader('WWW-Authenticate', 'Basic');
+        err.status = 401;
+        next(err);
+        return;
+    }
+    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+    var user = auth[0];
+    var pass = auth[1];
+    if (user == 'admin' && pass == 'password') {
+        res.cookie('user','admin',{signed: true});
+        next(); // authorized
+    } else {
+        var err = new Error('You are not authenticated!');
+        res.setHeader('WWW-Authenticate', 'Basic');
+        err.status = 401;
+        next(err);
+    }
+  }
+  else {
+      if (req.signedCookies.user === 'admin') {
+          next();
+      }
+      else {
+          var err = new Error('You are not authenticated!');
+          err.status = 401;
+          next(err);
+      }
   }
 }
 
