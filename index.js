@@ -11,6 +11,7 @@ const FileStore = require('session-file-store')(session);
 const dish = require('./routes/dishRouter');
 const promo = require('./routes/promoRouter');
 const leaders = require('./routes/leaderRouter');
+const users = require('./routes/users');
 
 const Dishes = require('./models/dishes');
 
@@ -34,41 +35,23 @@ app.use(session({
   store: new FileStore()
 }));
 
-function auth(req, res, next) {
+function auth (req, res, next) {
   console.log(req.session);
 
-  if (!req.session.user) {
-      var authHeader = req.headers.authorization;
-      if (!authHeader) {
-          var err = new Error('You are not authenticated!');
-          res.setHeader('WWW-Authenticate', 'Basic');
-          err.status = 401;
-          next(err);
-          return;
-      }
-      var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-      var user = auth[0];
-      var pass = auth[1];
-      if (user == 'admin' && pass == 'password') {
-          req.session.user = 'admin';
-          next(); // authorized
-      } else {
-          var err = new Error('You are not authenticated!');
-          res.setHeader('WWW-Authenticate', 'Basic');
-          err.status = 401;
-          next(err);
-      }
+  if(!req.session.user) {
+      var err = new Error('You are not authenticated!');
+      err.status = 403;
+      return next(err);
   }
   else {
-      if (req.session.user === 'admin') {
-          console.log('req.session: ',req.session);
-          next();
-      }
-      else {
-          var err = new Error('You are not authenticated!');
-          err.status = 401;
-          next(err);
-      }
+    if (req.session.user === 'authenticated') {
+      next();
+    }
+    else {
+      var err = new Error('You are not authenticated!');
+      err.status = 403;
+      return next(err);
+    }
   }
 }
 
@@ -77,6 +60,7 @@ app.use(auth);
 app.use('/dishes', dish);
 app.use('/promotions', promo);
 app.use('/leaders', leaders);
+app.use('/users', users);
 
 app.use(express.static(__dirname + '/public'));
 
